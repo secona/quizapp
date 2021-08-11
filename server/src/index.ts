@@ -1,15 +1,18 @@
+require('dotenv').config();
 import express from 'express';
 import morgan from 'morgan';
+import api from './api/api.router';
 
-const app = express();
+function main() {
+  const app = express();
+  
+  app.use(morgan('tiny'));
+  app.use(express.json());
+  app.use('/api', api);
+  
+  app.listen(5000, () => {
+    console.log('Listening on port 5000');
+  });
+}
 
-app.use(morgan('tiny'));
-app.use(express.json());
-
-app.get('/hello', (req, res) => {
-  res.json({ message: 'Hello!' });
-});
-
-app.listen(5000, () => {
-  console.log('Listening on port 5000');
-});
+main();
