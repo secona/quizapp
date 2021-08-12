@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { auth, oauth2 } from '@googleapis/oauth2';
+import { nanoid } from 'nanoid';
+import prisma from '~/lib/prisma';
 
 const router = Router();
 const oauth = oauth2('v2');
@@ -30,9 +32,24 @@ router.get('/callback', async (req, res) => {
     const { data } = await oauth.userinfo.v2.me.get({
       oauth_token: tokens.access_token!,
     });
-  
-    // create user and redirect to dashboard
-    res.json({ data });
+
+    const userInfo = {
+      email: data.email!,
+      name: data.name!,
+      picture: data.picture!,
+    };
+
+    await prisma.user.upsert({
+      where: { email: data.email! },
+      update: userInfo,
+      create: {
+        username: nanoid(),
+        ...userInfo,
+      },
+    });
+
+    // todo: implement cookies
+    res.redirect('/dashboard');
   } catch (e) {
     res.redirect('/login?error=true');
   }

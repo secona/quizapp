@@ -6,7 +6,7 @@ import api from './api/api.router';
 function main() {
   const app = express();
   
-  app.use(morgan('tiny'));
+  app.use(morgan('dev'));
   app.use(express.json());
   app.use('/api', api);
   
