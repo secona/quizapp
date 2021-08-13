@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { auth, oauth2 } from '@googleapis/oauth2';
-import { nanoid } from 'nanoid';
+import { signAccessToken } from '~/services/tokens';
+import { nanoid } from '~/lib/nanoid';
 import prisma from '~/lib/prisma';
 
 const router = Router();
@@ -9,7 +10,7 @@ const oauthClient = new auth.OAuth2({
   clientId: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   redirectUri: process.env.ROOT_URL + '/api/auth/google/callback',
-})
+});
 
 router.get('/', (_, res) => {
   const url = oauthClient.generateAuthUrl({
@@ -39,16 +40,25 @@ router.get('/callback', async (req, res) => {
       picture: data.picture!,
     };
 
-    await prisma.user.upsert({
+    const { userId } = await prisma.user.upsert({
       where: { email: data.email! },
       update: userInfo,
       create: {
         username: nanoid(),
         ...userInfo,
       },
+      select: {
+        userId: true,
+      },
     });
 
-    // todo: implement cookies
+    const cookiePayload = signAccessToken({ userId });
+    res.cookie('access_token', cookiePayload, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 2_592_000_000, // 30 days
+    });
+
     res.redirect('/dashboard');
   } catch (e) {
     res.redirect('/login?error=true');
