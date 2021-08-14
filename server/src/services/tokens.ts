@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-interface AccessToken {
+export interface AccessToken {
   userId: string;
 }
 
@@ -11,7 +11,7 @@ export const signAccessToken = (payload: AccessToken) => {
 };
 
 export const verifyAccessToken = (token: string) => {
-  return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!);
+  return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as jwt.JwtPayload & AccessToken | null;
 };
 
 export default {
