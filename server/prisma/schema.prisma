@@ -8,7 +8,7 @@ generator client {
 }
 
 model User {
-  userId   String @id @db.Uuid @default(uuid())
+  userId   String @id @default(uuid()) @db.Uuid
   email    String @unique
   username String @unique
   name     String
@@ -17,5 +17,34 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  quizzes Quiz[]
+
   @@map("users")
+}
+
+model Quiz {
+  quizId      String @id @default(uuid()) @db.Uuid
+  title       String
+  description String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author    User       @relation(fields: [authorId], references: [userId])
+  authorId  String     @db.Uuid
+  questions Question[]
+
+  @@map("quizzes")
+}
+
+model Question {
+  questionId String   @id @default(uuid()) @db.Uuid
+  question   String
+  choices    String[]
+  correct    Int
+
+  quiz   Quiz   @relation(fields: [quizId], references: [quizId])
+  quizId String @db.Uuid
+
+  @@map("questions")
 }
