@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { select } from './users.templates';
-import { validateUser } from './users.service';
+import { selectFromUser } from './users.templates';
+import { userSchema } from './users.schemas';
 import errors from '~/templates/errors';
 import authenticate from '~/middlewares/authenticate';
 import prisma from '~/lib/prisma';
@@ -12,14 +12,14 @@ router.get('/:userId', authenticate, (req, res, next) => {
     req.params.userId === 'me' ? req.accessToken.userId : req.params.userId;
 
   prisma.user
-    .findUnique({ where: { userId }, select })
+    .findUnique({ where: { userId }, select: selectFromUser })
     .then(data => res.status(200).json({ data }))
     .catch(next);
 });
 
 router.patch('/me', authenticate, (req, res, next) => {
   const { userId } = req.accessToken;
-  const result = validateUser(req.body);
+  const result = userSchema.validate(req.body);
   if (result.error) return next(errors.joiError(result.error));
 
   prisma.user

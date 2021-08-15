@@ -1,6 +1,6 @@
 import { User } from '@prisma/client';
 
-export const select: Partial<Record<keyof User, boolean>> = {
+export const selectFromUser: Partial<Record<keyof User, boolean>> = {
   userId: true,
   username: true,
   name: true,

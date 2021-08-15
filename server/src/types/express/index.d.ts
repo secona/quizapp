@@ -1,5 +1,5 @@
 import { JwtPayload } from 'jsonwebtoken';
-import { AccessToken } from '~/services/tokens';
+import { AccessToken } from '~/utils/tokens';
 
 declare global {
   namespace Express {

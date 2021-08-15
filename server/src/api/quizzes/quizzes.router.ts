@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { validateBody, getIncludes } from './quizzes.service';
+import { getIncludes } from './quizzes.utils';
+import { quizSchema } from './quizzes.schemas';
 import { checkOwnership } from './quizzes.middlewares';
 import authenticate from '~/middlewares/authenticate';
 import prisma from '~/lib/prisma';
@@ -20,18 +21,13 @@ router.get('/:quizId', authenticate, (req, res, next) => {
 
 router.post('/', authenticate, (req, res, next) => {
   const { userId } = req.accessToken;
-  const result = validateBody(req.body, { presence: 'required' });
+  const result = quizSchema.validate(req.body, { presence: 'required' });
   if (result.error) return next(errors.joiError(result.error));
-  const { title, description, questions } = result.value;
+  const { title, description } = result.value;
 
   prisma.quiz
     .create({
-      data: {
-        title,
-        description,
-        author: { connect: { userId } },
-        questions: { create: questions },
-      },
+      data: { title, description, author: { connect: { userId } } },
       include: getIncludes(req.query)
     })
     .then(data => res.status(201).json({ data }))
@@ -40,7 +36,8 @@ router.post('/', authenticate, (req, res, next) => {
 
 router.patch('/:quizId', ...checkOwnership, (req, res, next) => {
   const { quizId } = req.params;
-  const result = validateBody(req.body, { presence: 'optional' });
+  const result = quizSchema.validate(req.body, { presence: 'optional' });
+
   if (result.error) return next(errors.joiError(result.error));
   const { title, description } = result.value;
 
@@ -62,10 +59,7 @@ router.delete('/:quizId', ...checkOwnership, (req, res, next) => {
       prisma.quiz.delete({ where: { quizId } }),
     ])
     .then(() => res.status(204).end())
-    .catch(err => {
-      console.log(err);
-      next(err);
-    });
+    .catch(err => next(err));
 });
 
 export default router;

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { auth, oauth2 } from '@googleapis/oauth2';
-import { signAccessToken } from '~/services/tokens';
+import { signAccessToken } from '~/utils/tokens';
 import { nanoid } from '~/lib/nanoid';
 import prisma from '~/lib/prisma';
 

@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { verifyAccessToken } from '~/services/tokens';
+import { verifyAccessToken } from '~/utils/tokens';
 import errors from '~/templates/errors';
 
 export default <RequestHandler>((req, res, next) => {
