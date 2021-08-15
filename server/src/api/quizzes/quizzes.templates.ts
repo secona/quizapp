@@ -1,4 +1,6 @@
 import HTTPError from '~/templates/HTTPError';
+import toBoolean from '~/utils/toBoolean';
+import { selectFromUser } from '../users/users.templates';
 
 export const errors = {
   notOwnedByUser: (userId: string, quizId: string) => new HTTPError({
@@ -10,3 +12,8 @@ export const errors = {
     }]
   }),
 };
+
+export const getQuizIncludes = (query: Record<string, any>) => ({
+  questions: toBoolean(query.include_questions ?? true),
+  author: toBoolean(query.include_author) && { select: selectFromUser() },
+});
