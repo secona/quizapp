@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import { auth, oauth2 } from '@googleapis/oauth2';
+import { User } from '../../users/users.model';
 import { signAccessToken } from '~/utils/tokens';
-import { nanoid } from '~/lib/nanoid';
-import prisma from '~/lib/prisma';
 
 const router = Router();
 const oauth = oauth2('v2');
@@ -40,19 +39,15 @@ router.get('/callback', async (req, res) => {
       picture: data.picture!,
     };
 
-    const { userId } = await prisma.user.upsert({
-      where: { email: data.email! },
-      update: userInfo,
-      create: {
-        username: nanoid(),
-        ...userInfo,
-      },
-      select: {
-        userId: true,
-      },
-    });
+    const { _id } = await User.findOneAndUpdate(
+      { email: data.email! },
+      userInfo,
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    )
+      .select('_id')
+      .lean();
 
-    const cookiePayload = signAccessToken({ userId });
+    const cookiePayload = signAccessToken({ userId: _id });
     res.cookie('access_token', cookiePayload, {
       httpOnly: true,
       sameSite: 'lax',

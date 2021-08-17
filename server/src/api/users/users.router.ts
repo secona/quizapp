@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { selectFromUser, getUserIncludes } from './users.templates';
-import { userSchema } from './users.schemas';
-import errors from '~/templates/errors';
+import { User, userJoiSchema } from './users.model';
+import validateBody from '~/middlewares/validateBody';
 import authenticate from '~/middlewares/authenticate';
-import prisma from '~/lib/prisma';
+import toBoolean from '~/utils/toBoolean';
 
 const router = Router();
 
@@ -12,43 +11,39 @@ router.get('/:userId', authenticate, (req, res, next) => {
   const isMe = req.params.userId === 'me';
   const userId = isMe ? req.accessToken.userId : req.params.userId;
 
-  prisma.user
-    .findUnique({
-      where: { userId },
-      select: {
-        ...selectFromUser(isMe),
-        ...getUserIncludes(req.query),
-      },
+  User.findById(userId)
+    .select(isMe ? '' : '-email -updatedAt')
+    // .populate(toBoolean(req.query.include_quizzes) ? 'quizzes' : '')
+    .populate({
+      path: 'quizzes',
+      select: '-questions'
     })
+    .lean()
+    .exec()
     .then(data => res.status(200).json({ data }))
     .catch(next);
 });
 
 // update `me` user
-router.patch('/me', authenticate, (req, res, next) => {
-  const { userId } = req.accessToken;
-  const result = userSchema.validate(req.body);
-  if (result.error) return next(errors.joiError(result.error));
+router.patch(
+  '/me',
+  authenticate,
+  validateBody(userJoiSchema),
+  (req, res, next) => {
+    const { userId } = req.accessToken;
+    const { value } = req.validationResult;
 
-  prisma.user
-    .update({
-      where: { userId },
-      data: result.value,
-      include: getUserIncludes(req.query),
-    })
-    .then(data => res.status(200).json({ data }))
-    .catch(next);
-});
+    User.findByIdAndUpdate(userId, value, { new: true })
+      .lean()
+      .exec()
+      .then(data => res.status(200).json({ data }), next);
+  }
+);
 
 // delete `me` user
 router.delete('/me', authenticate, (req, res, next) => {
   const { userId } = req.accessToken;
-
-  // todo: user recovery
-  prisma.user
-    .delete({ where: { userId } })
-    .then(() => res.status(204).end())
-    .catch(next);
+  User.deleteOne({ _id: userId }).exec().then(res.status(204).end, next);
 });
 
 export default router;
