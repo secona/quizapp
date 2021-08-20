@@ -17,7 +17,7 @@ async function main() {
 
   app.use(morgan('dev'));
   app.use(express.json());
-  app.use(cookieParser())
+  app.use(cookieParser());
   app.use('/api', api);
   app.use(errorHandler);
   

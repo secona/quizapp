@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { checkOwnership } from './quizzes.middlewares';
 import { Quiz, quizJoiSchema } from './quizzes.model';
-import { User } from '../users/users.model';
 import validateBody from '~/middlewares/validateBody';
 import authenticate from '~/middlewares/authenticate';
 
@@ -10,8 +9,7 @@ const router = Router();
 // get quizzes by quizid
 router.get('/:quizId', authenticate, (req, res, next) => {
   const { quizId } = req.params;
-  Quiz.findById(quizId)
-    .select('-questions')
+  Quiz.findById(quizId, '-questions', { lean: true })
     .exec()
     .then(data => res.json({ data }))
     .catch(next);
@@ -27,11 +25,8 @@ router.post(
     const { value } = req.validationResult;
     const newQuiz = new Quiz({ ...value, author: userId });
 
-    Promise.all([
-      newQuiz.save(),
-      User.updateOne({ _id: userId }, { $push: { quizzes: newQuiz._id } }),
-    ])
-      .then(([data]) => res.status(201).json({ data }))
+    Quiz.saveAndReference(newQuiz, userId)
+      .then(data => res.status(201).json({ data }))
       .catch(next);
   }
 );
@@ -44,7 +39,8 @@ router.put(
   (req, res, next) => {
     const { quizId } = req.params;
     const { value } = req.validationResult;
-    Quiz.findByIdAndUpdate(quizId, value, { new: true })
+    Quiz.findByIdAndUpdate(quizId, value, { new: true, lean: true })
+      .exec()
       .then(data => res.status(200).json({ data }))
       .catch(next);
   }
@@ -53,7 +49,8 @@ router.put(
 // delete quiz by quizId
 router.delete('/:quizId', ...checkOwnership, (req, res, next) => {
   const { quizId } = req.params;
-  Quiz.deleteOne({ _id: quizId })
+  const { userId } = req.accessToken;
+  Quiz.deleteOneAndDereference(quizId, userId)
     .then(() => res.status(204).end())
     .catch(err => next(err));
 });

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { UserModel } from '../users/users.model';
+import { quizStatics, QuizStatics } from './quizzes.model-statics';
 import Joi from '~/lib/Joi';
 
 export interface IQuestion {
@@ -17,7 +18,7 @@ export interface IQuiz {
 
 export interface QuizDocument extends IQuiz, mongoose.Document {}
 
-export interface QuizModel extends mongoose.Model<QuizDocument> {}
+export interface QuizModel extends mongoose.Model<QuizDocument>, QuizStatics {}
 
 const QuizSchema = new mongoose.Schema<QuizDocument, QuizModel>(
   {
@@ -67,4 +68,5 @@ export const quizJoiSchema = Joi.object<IQuiz>({
   ),
 });
 
+Object.assign(QuizSchema.statics, quizStatics);
 export const Quiz = mongoose.model<QuizDocument, QuizModel>('Quiz', QuizSchema);
