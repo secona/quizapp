@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { checkOwnership } from './quizzes.middlewares';
-import { Quiz, quizJoiSchema } from './quizzes.model';
+import { answersJoiSchema, Quiz, quizJoiSchema } from './quizzes.model';
 import validateBody from '~/middlewares/validateBody';
 import authenticate from '~/middlewares/authenticate';
 
@@ -54,5 +54,49 @@ router.delete('/:quizId', ...checkOwnership, (req, res, next) => {
     .then(() => res.status(204).end())
     .catch(err => next(err));
 });
+
+router.get('/:quizId/play', authenticate, (req, res, next) => {
+  Quiz.findById(
+    req.params.quizId,
+    '-questions.correct',
+    { lean: true },
+    (err, data) => {
+      if (err) return next(err);
+      res.status(200).json({ data });
+    }
+  );
+});
+
+router.post(
+  '/:quizId/check',
+  authenticate,
+  validateBody(answersJoiSchema),
+  async (req, res, next) => {
+    const quiz = await Quiz.findById(req.params.quizId).lean();
+    if (!quiz) return res.status(404).end();
+
+    const { questions } = quiz;
+    const questionCount = questions.length;
+    const answers = req.body.answers;
+
+    let correctCount = 0;
+    let correctAnswers = [] as number[];
+    for (let i = 0; i < questionCount; i++) {
+      if (questions[i].correct === answers[i]) {
+        correctCount++;
+        correctAnswers.push(i);
+      }
+    }
+
+    res.json({
+      data: {
+        score: ((correctCount / questionCount) * 100).toFixed(2),
+        questionCount,
+        correctCount,
+        correctAnswers,
+      },
+    });
+  }
+);
 
 export default router;

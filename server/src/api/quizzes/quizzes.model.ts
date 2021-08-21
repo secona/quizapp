@@ -55,6 +55,9 @@ const QuizSchema = new mongoose.Schema<QuizDocument, QuizModel>(
   }
 );
 
+Object.assign(QuizSchema.statics, quizStatics);
+export const Quiz = mongoose.model<QuizDocument, QuizModel>('Quiz', QuizSchema);
+
 export const quizJoiSchema = Joi.object<IQuiz>({
   title: Joi.string().required(),
   description: Joi.string(),
@@ -68,5 +71,6 @@ export const quizJoiSchema = Joi.object<IQuiz>({
   ),
 });
 
-Object.assign(QuizSchema.statics, quizStatics);
-export const Quiz = mongoose.model<QuizDocument, QuizModel>('Quiz', QuizSchema);
+export const answersJoiSchema = Joi.object({
+  answers: Joi.array().items(Joi.number()).required(),
+});
