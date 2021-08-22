@@ -1,6 +1,6 @@
 import { ValidationResult } from 'joi';
 import { JwtPayload } from 'jsonwebtoken';
-import { AccessToken } from '~/utils/tokens';
+import { AccessToken } from '~/lib/tokens';
 
 declare global {
   namespace Express {

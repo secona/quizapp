@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { auth, oauth2 } from '@googleapis/oauth2';
 import { User } from '../../users/users.model';
-import { signAccessToken } from '~/utils/tokens';
+import { signAccessToken } from '~/lib/tokens';
+import cookieConfig from '~/config/cookie';
 
 const router = Router();
 const oauth = oauth2('v2');
@@ -43,12 +44,11 @@ router.get('/callback', async (req, res) => {
       { email: data.email! },
       userInfo,
       { upsert: true, new: true, setDefaultsOnInsert: true }
-    )
-      .select('_id')
-      .lean();
+    ).select('_id').lean();
 
     const cookiePayload = signAccessToken({ userId: _id });
     res.cookie('access_token', cookiePayload, {
+      ...cookieConfig,
       httpOnly: true,
       sameSite: 'lax',
       maxAge: 2_592_000_000, // 30 days

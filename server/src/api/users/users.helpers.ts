@@ -1,4 +1,4 @@
-import toBoolean from '~/utils/toBoolean';
+import toBoolean from '~/lib/toBoolean';
 
 export const getPopulateOptions = (query: Record<string, any>) =>
   toBoolean(query.include_quizzes) && {
